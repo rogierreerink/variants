@@ -1,6 +1,6 @@
 use syn::{Error, Ident, Path, TypePath, visit_mut::VisitMut};
 
-use super::path_ident::PathIdentAppender;
+use super::ident_appender::PathIdentAppender;
 
 pub struct PathVariantAppender<'a> {
     ty_path: &'a TypePath,

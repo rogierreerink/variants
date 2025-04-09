@@ -1,4 +1,7 @@
-use syn::{Error, Ident, Path, visit_mut::VisitMut};
+use syn::{
+    Error, Ident, Path,
+    visit_mut::{VisitMut, visit_path_mut},
+};
 
 pub struct PathIdentAppender<'a> {
     base_path: &'a Path,
@@ -28,6 +31,8 @@ impl<'a> PathIdentAppender<'a> {
 
 impl VisitMut for PathIdentAppender<'_> {
     fn visit_path_mut(&mut self, node: &mut Path) {
+        visit_path_mut(self, node);
+
         if !self
             .base_path
             .segments

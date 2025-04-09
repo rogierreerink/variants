@@ -1,2 +1,2 @@
-pub mod path_ident;
-pub mod path_variant;
+pub mod ident_appender;
+pub mod variant_appender;

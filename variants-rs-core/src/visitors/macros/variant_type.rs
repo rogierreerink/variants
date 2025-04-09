@@ -1,7 +1,6 @@
-use syn::{
-    Error, Ident, Macro, Path, PathArguments, PathSegment, Type, TypePath, punctuated::Punctuated,
-    spanned::Spanned, visit_mut::VisitMut,
-};
+use syn::{Error, Ident, Macro, Type, spanned::Spanned, visit_mut::VisitMut};
+
+use crate::utilities::ident_ext::IdentExt;
 
 use super::insert_type::InsertTypeMacro;
 
@@ -20,22 +19,7 @@ impl<'a> VariantTypeMacro<'a> {
     ///
     pub fn new(variant: &Option<Ident>, errors: &'a mut Vec<Error>) -> Self {
         Self {
-            variant_type: variant.as_ref().map(|variant| {
-                Type::Path(TypePath {
-                    qself: None,
-                    path: Path {
-                        leading_colon: None,
-                        segments: {
-                            let mut segments = Punctuated::new();
-                            segments.push(PathSegment {
-                                ident: variant.clone(),
-                                arguments: PathArguments::None,
-                            });
-                            segments
-                        },
-                    },
-                })
-            }),
+            variant_type: variant.as_ref().map(|variant| variant.clone().into_type()),
             errors,
         }
     }

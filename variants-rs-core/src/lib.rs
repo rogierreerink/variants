@@ -1,5 +1,6 @@
 pub mod context;
 pub mod generator;
+pub mod utilities;
 pub mod visitors;
 
 #[cfg(test)]
@@ -25,6 +26,10 @@ mod tests {
                 // `bat` will not be included in FooTest.
                 /// This doc-comment and other non-`variants` attributes will.
                 bat: String,
+
+                // Foo will automatically be renamed into its variants.
+                recurse: Foo,
+                recurse_vec: Vec<Foo>,
             }
         };
 
