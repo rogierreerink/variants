@@ -52,7 +52,7 @@ mod tests {
     fn generate_impls() {
         let input = quote! {
             #[variants(Bar, Baz)]
-            impl variant_str!() {
+            impl Foo {
                 const NAME: &'static str = type_str!();
 
                 fn new() -> Self {

@@ -1,5 +1,4 @@
-use proc_macro2::Span;
-use syn::{Error, Ident, Item, ItemImpl, Type, visit_mut::VisitMut};
+use syn::{Error, Ident, Item, ItemImpl, Type, spanned::Spanned, visit_mut::VisitMut};
 
 use super::{implement::ImplVisitor, macros::variant_str::VariantStrMacro};
 
@@ -9,29 +8,25 @@ pub struct ItemVisitor<'a> {
 }
 
 impl<'a> ItemVisitor<'a> {
+    /// Traverse supported input items.
+    ///
     pub fn new(variant: &'a Option<Ident>, errors: &'a mut Vec<Error>) -> Self {
         Self { variant, errors }
     }
 }
 
 impl VisitMut for ItemVisitor<'_> {
-    /// Entry point for traversing the supported input items.
-    ///
     fn visit_item_mut(&mut self, node: &mut Item) {
         VariantStrMacro::new(&self.variant, self.errors).visit_item_mut(node);
 
         match node {
             Item::Impl(ItemImpl { self_ty, .. }) => {
-                // I don't think it's possible for an implementation to be made
-                // for types other than Type::Path.
-                let ty_path = if let Type::Path(base) = self_ty.as_ref() {
-                    base.clone()
-                } else {
-                    self.errors.push(syn::Error::new(
-                        Span::call_site(),
-                        "impls on types other than `Type::Path` are not supported",
-                    ));
-                    return;
+                let ty_path = match self_ty.as_ref() {
+                    Type::Path(base) => base.clone(),
+                    ty => {
+                        Error::new(ty.span(), "type not supported in implementation");
+                        return;
+                    }
                 };
 
                 ImplVisitor::new(ty_path, self.variant, self.errors).visit_item_mut(node)
