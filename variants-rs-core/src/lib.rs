@@ -57,6 +57,7 @@ mod tests {
 
                 fn new() -> Self {
                     let _ = "Expression in all variants";
+                    let _: variant_type!() = Bar {};
 
                     match variant_str!() {
                         "Bar" | "Baz" => {
@@ -109,5 +110,7 @@ mod tests {
                 items: vec![input_ast]
             })
         );
+
+        println!("{:#?}", errors);
     }
 }

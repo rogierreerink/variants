@@ -1,9 +1,6 @@
-use syn::{
-    Error, Expr, Ident, Macro,
-    visit_mut::{VisitMut, visit_expr_mut, visit_macro_mut},
-};
+use syn::{Error, Expr, Ident, Macro, visit_mut::VisitMut};
 
-use super::replace_str::ReplaceStrMacro;
+use super::insert_str::InsertStrMacro;
 
 pub struct VariantStrMacro<'a> {
     variant_str: String,
@@ -31,17 +28,14 @@ impl<'a> VariantStrMacro<'a> {
 
 impl VisitMut for VariantStrMacro<'_> {
     fn visit_expr_mut(&mut self, node: &mut Expr) {
-        ReplaceStrMacro::new(Self::IDENTIFIER, self.variant_str.clone(), self.errors)
+        InsertStrMacro::new(Self::IDENTIFIER, self.variant_str.clone(), self.errors)
             .visit_expr_mut(node);
-
-        visit_expr_mut(self, node);
     }
 
     /// Emit an error on non-expression macro invocations.
+    ///
     fn visit_macro_mut(&mut self, node: &mut Macro) {
-        ReplaceStrMacro::new(Self::IDENTIFIER, self.variant_str.clone(), self.errors)
+        InsertStrMacro::new(Self::IDENTIFIER, self.variant_str.clone(), self.errors)
             .visit_macro_mut(node);
-
-        visit_macro_mut(self, node);
     }
 }

@@ -1,6 +1,9 @@
 use syn::{Error, Ident, Item, ItemImpl, Type, spanned::Spanned, visit_mut::VisitMut};
 
-use super::{implement::ImplVisitor, macros::variant_str::VariantStrMacro};
+use super::{
+    implement::ImplVisitor,
+    macros::{variant_str::VariantStrMacro, variant_type::VariantTypeMacro},
+};
 
 pub struct ItemVisitor<'a> {
     errors: &'a mut Vec<Error>,
@@ -17,7 +20,8 @@ impl<'a> ItemVisitor<'a> {
 
 impl VisitMut for ItemVisitor<'_> {
     fn visit_item_mut(&mut self, node: &mut Item) {
-        VariantStrMacro::new(&self.variant, self.errors).visit_item_mut(node);
+        VariantStrMacro::new(self.variant, self.errors).visit_item_mut(node);
+        VariantTypeMacro::new(self.variant, self.errors).visit_item_mut(node);
 
         match node {
             Item::Impl(ItemImpl { self_ty, .. }) => {
