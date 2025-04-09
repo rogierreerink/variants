@@ -1,9 +1,9 @@
+use proc_macro2::Span;
 use syn::{Error, Ident, Item, ItemImpl, Type, spanned::Spanned, visit_mut::VisitMut};
 
-use super::{
-    implement::ImplVisitor,
-    macros::{variant_str::VariantStrMacro, variant_type::VariantTypeMacro},
-};
+use crate::visitors::macros::{variant_str::VariantStrMacro, variant_type::VariantTypeMacro};
+
+use super::implement::ImplVisitor;
 
 pub struct ItemVisitor<'a> {
     errors: &'a mut Vec<Error>,
@@ -28,14 +28,23 @@ impl VisitMut for ItemVisitor<'_> {
                 let ty_path = match self_ty.as_ref() {
                     Type::Path(base) => base.clone(),
                     ty => {
-                        Error::new(ty.span(), "type not supported in implementation");
+                        self.errors.push(Error::new(
+                            ty.span(),
+                            "type not supported in implementation",
+                        ));
                         return;
                     }
                 };
-
                 ImplVisitor::new(ty_path, self.variant, self.errors).visit_item_mut(node)
             }
-            _ => {}
+            _ => {
+                self.errors.push(Error::new(
+                    Span::call_site(),
+                    "item type not supported, use on structs \
+                    and implementations (or submit a feature request)",
+                ));
+                return;
+            }
         }
     }
 }

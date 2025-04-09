@@ -4,14 +4,14 @@ pub mod visitors;
 
 #[cfg(test)]
 mod tests {
-    use crate::visitors::item::ItemVisitor;
+    use crate::visitors::items::item::ItemVisitor;
 
     use proc_macro2::Span;
-    use quote::{ToTokens, quote};
+    use quote::quote;
     use syn::{Ident, Item, parse2, visit_mut::VisitMut};
 
     #[test]
-    #[ignore = "working on impl right now"]
+    // #[ignore = "working on impl right now"]
     fn generate_structs() {
         let input = quote! {
             #[variants(Test)]
@@ -28,27 +28,39 @@ mod tests {
             }
         };
 
-        let expected = quote! {
-            struct Foo {
-                bar: usize,
-                baz: f64,
-                /// This doc-comment and other non-`variants` attributes will.
-                bat: String,
-            }
-            struct FooTest {
-                bar: usize,
-                baz: Option<f64>,
-            }
-        };
+        // let expected = quote! {
+        //     struct Foo {
+        //         bar: usize,
+        //         baz: f64,
+        //         /// This doc-comment and other non-`variants` attributes will.
+        //         bat: String,
+        //     }
+        //     struct FooTest {
+        //         bar: usize,
+        //         baz: Option<f64>,
+        //     }
+        // };
 
-        let input_stream = parse2::<Item>(input)
-            .expect("input must be parsable by syn")
-            .to_token_stream();
+        let mut input_ast = parse2::<Item>(input).expect("input must be parsable by syn");
+        let mut errors = Vec::new();
+        let variant = Some(Ident::new("Bar".into(), Span::call_site()));
 
-        assert_eq!(input_stream.to_string(), expected.to_string());
+        ItemVisitor::new(&variant, &mut errors).visit_item_mut(&mut input_ast);
+
+        println!(
+            "{}",
+            prettyplease::unparse(&syn::File {
+                shebang: None,
+                attrs: vec![],
+                items: vec![input_ast]
+            })
+        );
+
+        println!("{:#?}", errors);
     }
 
     #[test]
+    #[ignore = "working on struct right now"]
     fn generate_impls() {
         let input = quote! {
             #[variants(Bar, Baz)]

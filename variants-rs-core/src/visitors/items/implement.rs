@@ -1,6 +1,6 @@
 use syn::{Error, Ident, ItemImpl, TypePath, visit_mut::VisitMut};
 
-use super::{macros::type_str::TypeStrMacro, path::path_variant::PathVariantAppender};
+use crate::visitors::{macros::type_str::TypeStrMacro, path::path_variant::PathVariantAppender};
 
 pub struct ImplVisitor<'a> {
     ty_path: TypePath,
