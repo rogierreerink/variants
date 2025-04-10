@@ -1,4 +1,7 @@
-use syn::{Error, Ident, ItemStruct, visit_mut::VisitMut};
+use syn::{
+    Error, Field, Ident, ItemStruct,
+    visit_mut::{VisitMut, visit_item_struct_mut},
+};
 
 use crate::{
     utilities::ident_ext::IdentExt, visitors::path::variant_appender::PathVariantAppender,
@@ -34,5 +37,11 @@ impl VisitMut for StructVisitor<'_> {
             self.errors,
         )
         .visit_item_struct_mut(node);
+
+        visit_item_struct_mut(self, node);
+    }
+
+    fn visit_field_mut(&mut self, node: &mut Field) {
+        println!("other: {:#?}\n", node.attrs);
     }
 }

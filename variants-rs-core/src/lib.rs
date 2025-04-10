@@ -1,5 +1,6 @@
 pub mod context;
 pub mod generator;
+pub mod parsers;
 pub mod utilities;
 pub mod visitors;
 
@@ -12,18 +13,36 @@ mod tests {
     use syn::{Ident, Item, parse2, visit_mut::VisitMut};
 
     #[test]
-    // #[ignore = "working on impl right now"]
+    #[ignore = "not right now"]
+    fn parse_item_attrs() {
+        let _input = quote! {
+            Foo, Bar, Baz
+        };
+    }
+
+    #[test]
+    #[ignore = "not right now"]
+    fn parse_field_attrs() {
+        let _input = quote! {
+            include(Bar, Baz), retype = "Option<{}>"
+        };
+    }
+
+    #[test]
+    #[ignore = "not right now"]
     fn generate_structs() {
         let input = quote! {
-            #[variants(Test)]
+            #[variants(Bar, Baz)]
             struct Foo {
-                #[variants(include(Test))]
+                #[variants(include(Bar, Ban))]
+                #[variants(include(Baz), retype = "Vec<{}>")]
                 bar: usize,
 
-                #[variants(include(Test), retype = "Option<{}>")]
+                #[variants(include(Baz), retype = "Option<{}>")]
+                #[other(some_setting)]
                 baz: f64,
 
-                // `bat` will not be included in FooTest.
+                // `bat` will not be included in FooBar or FooBaz.
                 /// This doc-comment and other non-`variants` attributes will.
                 bat: String,
 
@@ -65,7 +84,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "working on struct right now"]
+    #[ignore = "not right now"]
     fn generate_impls() {
         let input = quote! {
             #[variants(Bar, Baz)]
