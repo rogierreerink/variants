@@ -1,4 +1,4 @@
-use syn::{Error, Lit, Result};
+use syn::{Error, Ident, Lit, Result};
 
 use super::{
     generics::{Expr, List, Value},
@@ -12,16 +12,10 @@ impl TryFrom<Value> for bool {
         match value {
             Value::Expr(Expr { value, .. }) => match value.as_ref() {
                 Value::Lit(Lit::Bool(lit_bool)) => Ok(lit_bool.value()),
-                value => Err(Error::new(value.span(), "expected a boolean expression")),
+                value => Err(format_error(value, "a boolean value (`true`, `false`)")),
             },
             Value::Ident(_) => Ok(true),
-            value => Err(Error::new(
-                value.span(),
-                match value.identifier() {
-                    Some(id) => format!("`{}` must be a boolean expression", id),
-                    None => "expected a boolean expression".into(),
-                },
-            )),
+            value => Err(format_error(&value, "a boolean expression")),
         }
     }
 }
@@ -33,19 +27,10 @@ impl TryFrom<Value> for String {
         match value {
             Value::Expr(Expr { value, .. }) => match value.as_ref() {
                 Value::Lit(Lit::Str(lit_str)) => Ok(lit_str.value()),
-                value => Err(Error::new(
-                    value.span(),
-                    "expected an identifier or string expression",
-                )),
+                value => Err(format_error(value, "a string literal")),
             },
             Value::Lit(Lit::Str(lit_str)) => Ok(lit_str.value()),
-            value => Err(Error::new(
-                value.span(),
-                match value.identifier() {
-                    Some(id) => format!("`{}` must be a string literal", id),
-                    None => "expected a string literal".into(),
-                },
-            )),
+            value => Err(format_error(&value, "a string literal")),
         }
     }
 }
@@ -62,13 +47,7 @@ impl TryFrom<Value> for Vec<String> {
                 for value in values {
                     match value {
                         Value::Lit(Lit::Str(lit_str)) => strings.push(lit_str.value()),
-                        value => errors.push(Error::new(
-                            value.span(),
-                            match value.identifier() {
-                                Some(id) => format!("`{}` must be a string literal", id),
-                                None => "expected a string literal".into(),
-                            },
-                        )),
+                        value => errors.push(format_error(&value, "a string literal")),
                     }
                 }
 
@@ -78,13 +57,69 @@ impl TryFrom<Value> for Vec<String> {
 
                 Ok(strings)
             }
-            value => Err(Error::new(
-                value.span(),
-                match value.identifier() {
-                    Some(id) => format!("`{}` must contain a list of strings", id),
-                    None => "expected a list of strings".into(),
-                },
-            )),
+            value => Err(format_error(&value, "a list of string literals")),
         }
     }
+}
+
+impl TryFrom<Value> for Ident {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<Self> {
+        match value {
+            Value::Ident(ident) => Ok(ident),
+            value => Err(format_error(&value, "an identifier")),
+        }
+    }
+}
+
+impl TryFrom<Value> for Vec<Ident> {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<Self> {
+        match value {
+            Value::List(List { values, .. }) => {
+                let mut errors = vec![];
+                let mut idents = vec![];
+
+                for value in values {
+                    match value {
+                        Value::Ident(ident) => idents.push(ident),
+                        value => errors.push(format_error(&value, "an identifier")),
+                    }
+                }
+
+                if let Some(error) = errors.combine_errors() {
+                    return Err(error);
+                }
+
+                Ok(idents)
+            }
+            value => Err(format_error(&value, "a list of identifiers")),
+        }
+    }
+}
+
+impl TryFrom<Value> for Lit {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<Self> {
+        match value {
+            Value::Expr(Expr { value, .. }) => match value.as_ref() {
+                Value::Lit(lit) => Ok(lit.clone()),
+                value => Err(format_error(value, "a literal")),
+            },
+            value => Err(format_error(&value, "a literal expression")),
+        }
+    }
+}
+
+fn format_error(value: &Value, expect: &str) -> Error {
+    Error::new(
+        value.span(),
+        match value.identifier() {
+            Some(id) => format!("`{}` expects {}", id, expect),
+            None => format!("expected {}", expect),
+        },
+    )
 }
