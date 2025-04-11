@@ -4,7 +4,9 @@ use syn::{
 };
 
 pub mod attributes;
+pub mod conversions;
 pub mod generics;
+pub mod helpers;
 
 pub trait TryParse: Sized {
     /// Try to parse a value without advancing the stream if parsing fails.

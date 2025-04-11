@@ -1,5 +1,6 @@
 use std::ops::Index;
 
+use proc_macro2::Span;
 use syn::{
     Ident, Lit, Result, Token, parenthesized,
     parse::{Parse, ParseStream},
@@ -9,17 +10,64 @@ use syn::{
 
 use super::TryParseExt;
 
-#[derive(PartialEq, Debug)]
 pub enum Value {
-    Expr(Expression),
+    Expr(Expr),
     Ident(Ident),
     List(List),
     Lit(Lit),
 }
 
+impl Value {
+    pub fn expr(&self) -> Option<&Expr> {
+        match self {
+            Value::Expr(expr) => Some(&expr),
+            _ => None,
+        }
+    }
+
+    pub fn ident(&self) -> Option<&Ident> {
+        match self {
+            Value::Ident(ident) => Some(&ident),
+            _ => None,
+        }
+    }
+
+    pub fn list(&self) -> Option<&List> {
+        match self {
+            Value::List(list) => Some(&list),
+            _ => None,
+        }
+    }
+
+    pub fn lit(&self) -> Option<&Lit> {
+        match self {
+            Value::Lit(lit) => Some(&lit),
+            _ => None,
+        }
+    }
+
+    pub fn identifier(&self) -> Option<String> {
+        match self {
+            Value::Expr(expr) => Some(expr.identifier()),
+            Value::Ident(ident) => Some(ident.to_string()),
+            Value::List(list) => Some(list.identifier()),
+            Value::Lit(_) => None,
+        }
+    }
+
+    pub fn span(&self) -> Span {
+        match self {
+            Value::Expr(expr) => expr.span(),
+            Value::Ident(ident) => ident.span(),
+            Value::List(list) => list.span(),
+            Value::Lit(lit) => lit.span(),
+        }
+    }
+}
+
 impl Parse for Value {
     fn parse(input: ParseStream) -> Result<Self> {
-        if let Ok(expr) = input.try_parse::<Expression>() {
+        if let Ok(expr) = input.try_parse::<Expr>() {
             Ok(Self::Expr(expr))
         } else if let Ok(list) = input.try_parse::<List>() {
             Ok(Self::List(list))
@@ -33,14 +81,48 @@ impl Parse for Value {
     }
 }
 
-#[derive(PartialEq, Debug)]
-pub struct Expression {
+pub struct Values(Punctuated<Value, Token![,]>);
+
+impl Index<usize> for Values {
+    type Output = Value;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl IntoIterator for Values {
+    type Item = Value;
+    type IntoIter = punctuated::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl Parse for Values {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Values(input.parse_terminated(Value::parse, Token![,])?))
+    }
+}
+
+pub struct Expr {
     pub ident: Ident,
     pub eq_token: Token![=],
     pub value: Box<Value>,
 }
 
-impl Parse for Expression {
+impl Expr {
+    pub fn identifier(&self) -> String {
+        self.ident.to_string()
+    }
+
+    pub fn span(&self) -> Span {
+        self.ident.span()
+    }
+}
+
+impl Parse for Expr {
     fn parse(input: ParseStream) -> Result<Self> {
         Ok(Self {
             ident: input.parse()?,
@@ -50,11 +132,20 @@ impl Parse for Expression {
     }
 }
 
-#[derive(PartialEq, Debug)]
 pub struct List {
     pub ident: Ident,
     pub paren_token: Paren,
-    pub values: Punctuated<Value, Token![,]>,
+    pub values: Values,
+}
+
+impl List {
+    pub fn identifier(&self) -> String {
+        self.ident.to_string()
+    }
+
+    pub fn span(&self) -> Span {
+        self.ident.span()
+    }
 }
 
 impl Parse for List {
@@ -64,7 +155,7 @@ impl Parse for List {
         Ok(Self {
             ident: input.parse()?,
             paren_token: parenthesized!(value_stream in input),
-            values: value_stream.parse_terminated(Value::parse, Token![,])?,
+            values: value_stream.parse()?,
         })
     }
 }
@@ -91,7 +182,7 @@ mod tests {
     use quote::quote;
     use syn::{Lit, parse2};
 
-    use super::{Expression, List, Value};
+    use super::{Expr, List, Value};
 
     #[test]
     fn parse_expr() {
@@ -100,7 +191,7 @@ mod tests {
         };
 
         match parse2::<Value>(input).unwrap() {
-            Value::Expr(Expression { ident, value, .. }) => {
+            Value::Expr(Expr { ident, value, .. }) => {
                 assert_eq!(ident.to_string(), "accept");
 
                 match value.as_ref() {
