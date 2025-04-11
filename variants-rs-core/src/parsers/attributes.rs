@@ -5,11 +5,12 @@ pub mod structure;
 mod tests {
     use proc_macro2::Span;
     use quote::quote;
-    use syn::{Error, Ident, Lit, LitInt};
+    use syn::{Error, Ident, Lit, LitInt, Result};
 
     use crate::parsers::{
-        generics::Values,
-        helpers::{CombineErrorsExt, FromValueExt, IntoAttribute, IntoAttributeExt},
+        conversions::format_error,
+        generics::{List, Value, Values},
+        helpers::{CombineErrorsExt, FromValueExt, ParseAttributeExt},
     };
 
     #[derive(PartialEq, Debug)]
@@ -20,10 +21,13 @@ mod tests {
         pub some_expr: Option<String>,
         pub some_ident: Option<Ident>,
         pub some_lit: Option<Lit>,
+        pub some_sub_attr: Option<SubAttribute>,
     }
 
-    impl IntoAttribute for SomeAttribute {
-        fn try_from_spanned(values: Values, span: Span) -> syn::Result<Self> {
+    impl TryFrom<(Values, Span)> for SomeAttribute {
+        type Error = Error;
+
+        fn try_from((values, span): (Values, Span)) -> Result<Self> {
             let mut errors = Vec::new();
 
             let mut some_list: Option<Vec<String>> = None;
@@ -32,6 +36,7 @@ mod tests {
             let mut some_expr: Option<String> = None;
             let mut some_ident: Option<Ident> = None;
             let mut some_lit: Option<Lit> = None;
+            let mut some_sub_attr: Option<SubAttribute> = None;
 
             for value in values {
                 let id = match value.identifier() {
@@ -57,6 +62,9 @@ mod tests {
                     }
                     id_str if id_str == "some_lit" => {
                         some_lit.from_value(id_str, value, &mut errors);
+                    }
+                    id_str if id_str == "some_sub_attr" => {
+                        some_sub_attr.from_value(id_str, value, &mut errors);
                     }
                     id_str => {
                         errors.push(Error::new(
@@ -85,7 +93,84 @@ mod tests {
                 some_expr,
                 some_ident,
                 some_lit,
+                some_sub_attr,
             })
+        }
+    }
+
+    impl TryFrom<Value> for SomeAttribute {
+        type Error = Error;
+
+        fn try_from(value: Value) -> Result<Self> {
+            let span = value.span();
+
+            let values = match value {
+                Value::List(List { values, .. }) => values,
+                value => return Err(format_error(&value, "a list of values")),
+            };
+
+            Self::try_from((values, span))
+        }
+    }
+
+    #[derive(PartialEq, Debug)]
+    pub struct SubAttribute {
+        pub some_sub_bool: bool,
+    }
+
+    impl TryFrom<(Values, Span)> for SubAttribute {
+        type Error = Error;
+
+        fn try_from((values, span): (Values, Span)) -> Result<Self> {
+            let mut errors = Vec::new();
+
+            let mut some_sub_bool: Option<bool> = None;
+
+            for value in values {
+                let id = match value.identifier() {
+                    Some(id) => id,
+                    None => continue,
+                };
+
+                match id.as_str() {
+                    id_str if id_str == "some_sub_bool" => {
+                        some_sub_bool.from_value(id_str, value, &mut errors);
+                    }
+                    id_str => {
+                        errors.push(Error::new(
+                            value.span(),
+                            format!("unrecognized entry `{}`", id_str),
+                        ));
+                    }
+                }
+            }
+
+            if some_sub_bool.is_none() {
+                errors.push(Error::new(span, "expected key `some_expr` not found"));
+            };
+
+            if let Some(error) = errors.combine_errors() {
+                return Err(error);
+            }
+
+            Ok(Self {
+                some_sub_bool: some_sub_bool.unwrap_or_default(),
+            })
+        }
+    }
+
+    impl TryFrom<Value> for SubAttribute {
+        type Error = Error;
+
+        fn try_from(value: Value) -> Result<Self> {
+            let span = value.span();
+
+            let values = match value {
+                Value::List(List { values, .. }) => values,
+                value => return Err(format_error(&value, "a list of values")),
+            };
+
+            Self::try_from((values, span))
         }
     }
 
@@ -98,10 +183,13 @@ mod tests {
             some_expr = "foo",
             some_ident,
             some_lit = 123,
+            some_sub_attr(
+                some_sub_bool = false
+            ),
         };
 
         assert_eq!(
-            input.into_attribute::<SomeAttribute>().unwrap(),
+            input.parse_attribute::<SomeAttribute>().unwrap(),
             SomeAttribute {
                 some_list: vec!["lit1".into(), "lit2".into()],
                 some_ident_list: vec![
@@ -112,6 +200,9 @@ mod tests {
                 some_expr: Some("foo".into()),
                 some_ident: Some(Ident::new("some_ident", Span::call_site())),
                 some_lit: Some(Lit::Int(LitInt::new("123", Span::call_site()))),
+                some_sub_attr: Some(SubAttribute {
+                    some_sub_bool: false
+                }),
             }
         );
     }

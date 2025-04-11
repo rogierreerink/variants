@@ -114,7 +114,7 @@ impl TryFrom<Value> for Lit {
     }
 }
 
-fn format_error(value: &Value, expect: &str) -> Error {
+pub fn format_error(value: &Value, expect: &str) -> Error {
     Error::new(
         value.span(),
         match value.identifier() {

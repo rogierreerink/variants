@@ -10,6 +10,7 @@ use syn::{
 
 use super::TryParseExt;
 
+#[derive(Debug)]
 pub enum Value {
     Expr(Expr),
     Ident(Ident),
@@ -81,7 +82,18 @@ impl Parse for Value {
     }
 }
 
+#[derive(Debug)]
 pub struct Values(Punctuated<Value, Token![,]>);
+
+impl From<Value> for Values {
+    fn from(value: Value) -> Self {
+        Values({
+            let mut values = Punctuated::new();
+            values.push(value);
+            values
+        })
+    }
+}
 
 impl Index<usize> for Values {
     type Output = Value;
@@ -106,6 +118,7 @@ impl Parse for Values {
     }
 }
 
+#[derive(Debug)]
 pub struct Expr {
     pub ident: Ident,
     pub eq_token: Token![=],
@@ -132,6 +145,7 @@ impl Parse for Expr {
     }
 }
 
+#[derive(Debug)]
 pub struct List {
     pub ident: Ident,
     pub paren_token: Paren,

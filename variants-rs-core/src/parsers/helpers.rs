@@ -32,18 +32,14 @@ where
     }
 }
 
-pub trait IntoAttribute: Sized {
-    fn try_from_spanned(values: Values, span: Span) -> syn::Result<Self>;
+pub trait ParseAttributeExt: Sized {
+    fn parse_attribute<T: TryFrom<(Values, Span), Error = Error>>(self) -> syn::Result<T>;
 }
 
-pub trait IntoAttributeExt: Sized {
-    fn into_attribute<T: IntoAttribute>(self) -> syn::Result<T>;
-}
-
-impl IntoAttributeExt for TokenStream {
-    fn into_attribute<T: IntoAttribute>(self) -> syn::Result<T> {
+impl ParseAttributeExt for TokenStream {
+    fn parse_attribute<T: TryFrom<(Values, Span), Error = Error>>(self) -> syn::Result<T> {
         syn::parse::Parser::parse2(
-            |input: ParseStream| T::try_from_spanned(input.parse()?, input.span()),
+            |input: ParseStream| T::try_from((input.parse()?, input.span())),
             self,
         )
     }
