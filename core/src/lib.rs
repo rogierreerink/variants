@@ -1,6 +1,5 @@
 pub mod context;
 pub mod generator;
-pub mod parsers;
 pub mod utilities;
 pub mod visitors;
 
@@ -13,23 +12,7 @@ mod tests {
     use syn::{Ident, Item, parse2, visit_mut::VisitMut};
 
     #[test]
-    #[ignore = "not right now"]
-    fn parse_item_attrs() {
-        let _input = quote! {
-            Foo, Bar, Baz
-        };
-    }
-
-    #[test]
-    #[ignore = "not right now"]
-    fn parse_field_attrs() {
-        let _input = quote! {
-            include(Bar, Baz), retype = "Option<{}>"
-        };
-    }
-
-    #[test]
-    #[ignore = "not right now"]
+    // #[ignore = "not right now"]
     fn generate_structs() {
         let input = quote! {
             #[variants(Bar, Baz)]
@@ -71,14 +54,14 @@ mod tests {
 
         ItemVisitor::new(&variant, &mut errors).visit_item_mut(&mut input_ast);
 
-        println!(
-            "{}",
-            prettyplease::unparse(&syn::File {
-                shebang: None,
-                attrs: vec![],
-                items: vec![input_ast]
-            })
-        );
+        // println!(
+        //     "{}",
+        //     prettyplease::unparse(&syn::File {
+        //         shebang: None,
+        //         attrs: vec![],
+        //         items: vec![input_ast]
+        //     })
+        // );
 
         println!("{:#?}", errors);
     }

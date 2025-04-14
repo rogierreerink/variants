@@ -1,4 +1,10 @@
 [package]
-name = "variants-rs"
+name = "variants"
 version = "0.1.0"
 edition = "2024"
+
+[dependencies]
+variants-core = { path = "core" }
+variants-derive = { path = "derive" }
+
+[workspace]

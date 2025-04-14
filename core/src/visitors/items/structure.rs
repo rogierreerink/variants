@@ -1,5 +1,6 @@
+use squattr::{attribute::Attribute, derive::Squattr};
 use syn::{
-    Error, Field, Ident, ItemStruct,
+    Error, Field, Ident, ItemStruct, LitStr,
     visit_mut::{VisitMut, visit_item_struct_mut},
 };
 
@@ -42,6 +43,25 @@ impl VisitMut for StructVisitor<'_> {
     }
 
     fn visit_field_mut(&mut self, node: &mut Field) {
-        println!("other: {:#?}\n", node.attrs);
+        let attrs = node
+            .attrs
+            .iter()
+            .filter(|attr| attr.path().is_ident("variants"))
+            .filter_map(|attr| match FieldAttribute::from_meta(&attr.meta) {
+                Ok(parsed) => Some(parsed),
+                Err(error) => {
+                    self.errors.push(error.into());
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        println!("{:#?}\n", attrs);
     }
+}
+
+#[derive(Squattr, Debug)]
+struct FieldAttribute {
+    include: Vec<Ident>,
+    retype: Option<LitStr>,
 }
