@@ -41,14 +41,15 @@ impl VisitMut for ItemVisitor<'_> {
                 )
                 .visit_item_mut(node);
             }
+
             Item::Struct(ItemStruct { ident, .. }) => {
                 StructVisitor::new(ident.clone(), self.variant, self.errors).visit_item_mut(node);
             }
+
             _ => {
                 self.errors.push(Error::new(
                     Span::call_site(),
-                    "item type not supported, use on structs \
-                    and implementations (or submit a feature request)",
+                    "item type not supported, use on structs and implementations",
                 ));
             }
         }

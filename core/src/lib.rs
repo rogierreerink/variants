@@ -18,7 +18,7 @@ mod tests {
             #[variants(Bar, Baz)]
             struct Foo {
                 #[variants(include(Bar, Ban))]
-                #[variants(include(Baz), retype = "Vec<{}>")]
+                #[variants(include(Baz), retype = "Option<{}>")]
                 bar: usize,
 
                 #[variants(include(Baz), retype = "Option<{}>")]
@@ -35,39 +35,26 @@ mod tests {
             }
         };
 
-        // let expected = quote! {
-        //     struct Foo {
-        //         bar: usize,
-        //         baz: f64,
-        //         /// This doc-comment and other non-`variants` attributes will.
-        //         bat: String,
-        //     }
-        //     struct FooTest {
-        //         bar: usize,
-        //         baz: Option<f64>,
-        //     }
-        // };
-
         let mut input_ast = parse2::<Item>(input).expect("input must be parsable by syn");
         let mut errors = Vec::new();
         let variant = Some(Ident::new("Bar".into(), Span::call_site()));
 
         ItemVisitor::new(&variant, &mut errors).visit_item_mut(&mut input_ast);
 
-        // println!(
-        //     "{}",
-        //     prettyplease::unparse(&syn::File {
-        //         shebang: None,
-        //         attrs: vec![],
-        //         items: vec![input_ast]
-        //     })
-        // );
+        println!(
+            "{}",
+            prettyplease::unparse(&syn::File {
+                shebang: None,
+                attrs: vec![],
+                items: vec![input_ast]
+            })
+        );
 
-        println!("{:#?}", errors);
+        println!("{:#?}\n", errors);
     }
 
     #[test]
-    #[ignore = "not right now"]
+    // #[ignore = "not right now"]
     fn generate_impls() {
         let input = quote! {
             #[variants(Bar, Baz)]
@@ -130,6 +117,6 @@ mod tests {
             })
         );
 
-        println!("{:#?}", errors);
+        println!("{:#?}\n", errors);
     }
 }

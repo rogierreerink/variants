@@ -11,7 +11,7 @@ pub struct PathIdentAppender<'a> {
 
 impl<'a> PathIdentAppender<'a> {
     /// Append the string value of `append` to the last path segment to match
-    /// the full `base_path` and replaces the span of that segment with the span
+    /// the full `base_path` and replace the span of that segment with the span
     /// of `append`.
     ///
     /// # Examples
