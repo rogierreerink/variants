@@ -4,6 +4,7 @@ use syn::{
 };
 
 pub mod field;
+pub mod field_value;
 pub mod r#impl;
 pub mod item;
 pub mod r#struct;

@@ -1,6 +1,8 @@
 use syn::Ident;
 
+pub mod expr_structs;
 pub mod field;
+pub mod field_value;
 pub mod r#impl;
 pub mod item;
 pub mod macros;

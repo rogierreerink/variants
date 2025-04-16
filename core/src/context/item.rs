@@ -5,7 +5,7 @@ use super::{Context, r#impl::ImplContext, r#struct::StructContext};
 
 pub struct ItemContext<'a> {
     pub context: &'a Context,
-    pub impl_ctx: Option<ImplContext>,
+    pub impl_ctx: Option<ImplContext<'a>>,
     pub struct_ctx: Option<StructContext<'a>>,
     pub errors: Vec<Error>,
 }
@@ -33,14 +33,14 @@ impl VisitMut for ItemContext<'_> {
     }
 
     fn visit_item_impl_mut(&mut self, node: &mut ItemImpl) {
-        let mut impl_ctx = ImplContext::new();
+        let mut impl_ctx = ImplContext::new(self.context);
         impl_ctx.visit_item_impl_mut(node);
         self.errors.append(&mut impl_ctx.errors);
         self.impl_ctx = Some(impl_ctx);
     }
 
     fn visit_item_struct_mut(&mut self, node: &mut ItemStruct) {
-        let mut struct_ctx = StructContext::new(&mut self.context);
+        let mut struct_ctx = StructContext::new(self.context);
         struct_ctx.visit_item_struct_mut(node);
         self.errors.append(&mut struct_ctx.errors);
         self.struct_ctx = Some(struct_ctx);

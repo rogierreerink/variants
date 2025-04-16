@@ -1,19 +1,19 @@
 use std::collections::HashMap;
 
 use squattr::{attribute::Attribute, derive::Squattr};
-use syn::{Error, Field, Ident, LitStr, visit_mut::VisitMut};
+use syn::{Error, FieldValue, Ident, visit_mut::VisitMut};
 
 use crate::utilities::errors_ext::ErrorsExt;
 
 use super::Context;
 
-pub struct FieldContext<'a> {
+pub struct FieldValueContext<'a> {
     pub context: &'a Context,
     pub settings: HashMap<Ident, VariantSettings>,
     pub errors: Vec<Error>,
 }
 
-impl<'a> FieldContext<'a> {
+impl<'a> FieldValueContext<'a> {
     pub fn new(context: &'a Context) -> Self {
         Self {
             context,
@@ -23,8 +23,8 @@ impl<'a> FieldContext<'a> {
     }
 }
 
-impl VisitMut for FieldContext<'_> {
-    fn visit_field_mut(&mut self, node: &mut Field) {
+impl VisitMut for FieldValueContext<'_> {
+    fn visit_field_value_mut(&mut self, node: &mut FieldValue) {
         self.visit_attributes_mut(&mut node.attrs);
     }
 
@@ -61,7 +61,6 @@ impl VisitMut for FieldContext<'_> {
                     variant.clone(),
                     VariantSettings {
                         variant: variant.clone(),
-                        retype: attr.retype.clone(),
                     },
                 ) {
                     self.errors.push(Error::new(
@@ -79,11 +78,9 @@ impl VisitMut for FieldContext<'_> {
 #[derive(Squattr, Clone)]
 struct VariantAttribute {
     include: Vec<Ident>,
-    retype: Option<LitStr>,
 }
 
 #[derive(Clone)]
 pub struct VariantSettings {
     pub variant: Ident,
-    pub retype: Option<LitStr>,
 }

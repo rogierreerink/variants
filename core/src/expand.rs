@@ -162,11 +162,10 @@ mod tests {
                     Self::hi();
 
                     Self {
-                        /// `bar` and `baz` will be included in all variants
+                        #[variants(include(Bar))]
                         bar: 123,
+                        #[variants(include(Bar))]
                         baz: 0.,
-
-                        #[variants(exclude(Bar, Baz))]
                         bat: "¡hola, mundo!".into(),
                     }
                 }
@@ -194,14 +193,11 @@ mod tests {
                     if "" == "Bar" {
                         let _ = "Expression only in FooBar";
                     }
-                    #[variants(include())]
                     let _ = "Expression only in Foo";
                     Self::hi();
                     Self {
-                        /// `bar` and `baz` will be included in all variants
                         bar: 123,
                         baz: 0.,
-                        #[variants(exclude(Bar, Baz))]
                         bat: "¡hola, mundo!".into(),
                     }
                 }
@@ -226,15 +222,10 @@ mod tests {
                     if "Bar" == "Bar" {
                         let _ = "Expression only in FooBar";
                     }
-                    #[variants(include())]
-                    let _ = "Expression only in Foo";
                     Self::hi();
                     Self {
-                        /// `bar` and `baz` will be included in all variants
                         bar: 123,
                         baz: 0.,
-                        #[variants(exclude(Bar, Baz))]
-                        bat: "¡hola, mundo!".into(),
                     }
                 }
                 fn hi() {

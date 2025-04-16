@@ -17,12 +17,12 @@ impl<'a> FieldExpander<'a> {
     pub fn new(
         context: &'a Context,
         struct_base_ident: &'a Ident,
-        field: &'a FieldContext,
+        field_ctx: &'a FieldContext,
     ) -> Self {
         Self {
             context,
             struct_base_ident,
-            field_ctx: field,
+            field_ctx,
             print_field: true,
             errors: Vec::new(),
         }
@@ -31,7 +31,7 @@ impl<'a> FieldExpander<'a> {
 
 impl VisitMut for FieldExpander<'_> {
     fn visit_field_mut(&mut self, node: &mut Field) {
-        let variant = match &self.context.variant {
+        let variant = match self.context.variant {
             Some(variant) => variant,
             None => return,
         };
