@@ -1,6 +1,9 @@
 use syn::{Error, ItemStruct, visit_mut::VisitMut};
 
-use crate::{context::r#struct::StructContext, utilities::ident_ext::IdentExt};
+use crate::{
+    context::r#struct::StructContext,
+    utilities::{fields_ext::FieldsExt, ident_ext::IdentExt},
+};
 
 use super::{Context, field::FieldExpander};
 
@@ -22,14 +25,24 @@ impl<'a> StructExpander<'a> {
 
 impl VisitMut for StructExpander<'_> {
     fn visit_item_struct_mut(&mut self, node: &mut ItemStruct) {
-        node.fields
+        let print_fields = node
+            .fields
             .iter_mut()
             .zip(self.struct_ctx.field_ctxs.iter())
-            .for_each(|(field_node, field_ctx)| {
+            .filter_map(|(field_node, field_ctx)| {
                 let mut field_expander = FieldExpander::new(self.context, &node.ident, &field_ctx);
                 field_expander.visit_field_mut(field_node);
                 self.errors.append(&mut field_expander.errors);
-            });
+
+                if field_expander.print_field {
+                    Some(field_node.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        node.fields.replace_fields(print_fields);
 
         if let Some(variant) = self.context.variant {
             node.ident = node.ident.from_appendix(variant);

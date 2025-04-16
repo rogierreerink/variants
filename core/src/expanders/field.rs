@@ -9,6 +9,7 @@ pub struct FieldExpander<'a> {
     context: &'a Context<'a>,
     struct_base_ident: &'a Ident,
     field_ctx: &'a FieldContext<'a>,
+    pub print_field: bool,
     pub errors: Vec<Error>,
 }
 
@@ -22,6 +23,7 @@ impl<'a> FieldExpander<'a> {
             context,
             struct_base_ident,
             field_ctx: field,
+            print_field: true,
             errors: Vec::new(),
         }
     }
@@ -36,7 +38,10 @@ impl VisitMut for FieldExpander<'_> {
 
         let settings = match self.field_ctx.settings.get(variant) {
             Some(settings) => settings,
-            None => return,
+            None => {
+                self.print_field = false;
+                return;
+            }
         };
 
         if let Some(retype) = &settings.retype {
