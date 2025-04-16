@@ -16,3 +16,6 @@ syn = { version = "2.0.100", features = [
     "visit-mut",
 ] }
 darling = "0.20.11"
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
