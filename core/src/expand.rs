@@ -4,8 +4,8 @@ use syn::{Item, parse2, visit_mut::VisitMut};
 
 use crate::{
     context::{self, item::ItemContext},
-    errors::ErrorsExt,
     expanders::{self, item::ItemExpander},
+    utilities::errors_ext::ErrorsExt,
 };
 
 pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
@@ -77,7 +77,7 @@ mod tests {
     use quote::quote;
 
     #[test]
-    fn generate_structs() {
+    fn expand_structs() {
         let attr = quote! {
             Bar, Baz
         };
@@ -126,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_impls() {
+    fn expand_impls() {
         let attr = quote! {
             Bar
         };

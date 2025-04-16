@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use squattr::{attribute::Attribute, derive::Squattr};
 use syn::{Error, Field, Ident, LitStr, visit_mut::VisitMut};
 
-use crate::errors::ErrorsExt;
+use crate::utilities::errors_ext::ErrorsExt;
 
 use super::Context;
 
