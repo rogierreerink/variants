@@ -19,6 +19,10 @@ pub trait IdentExt: Sized {
     fn into_type(self) -> Type {
         Type::Path(self.into_type_path())
     }
+
+    /// Create a new ident with the text of another identifier appended to `self`.
+    ///
+    fn from_appendix(&self, appendix: &Self) -> Self;
 }
 
 impl IdentExt for Ident {
@@ -34,5 +38,9 @@ impl IdentExt for Ident {
             leading_colon: None,
             segments,
         }
+    }
+
+    fn from_appendix(&self, appendix: &Self) -> Self {
+        Ident::new(&format!("{}{}", self, appendix), appendix.span())
     }
 }

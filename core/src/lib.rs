@@ -1,90 +1,141 @@
 pub mod context;
-pub mod generator;
+pub mod errors;
+pub mod expanders;
 pub mod utilities;
 pub mod visitors;
 
 #[cfg(test)]
 mod tests {
-    use crate::visitors::items::item::ItemVisitor;
+    use crate::{
+        context::{Context2, item::ItemContext},
+        errors::ErrorsExt,
+        expanders::{self, item::ItemExpander},
+    };
 
-    use proc_macro2::Span;
     use quote::quote;
-    use syn::{Ident, Item, parse2, visit_mut::VisitMut};
+    use syn::{Item, parse2, visit_mut::VisitMut};
 
     #[test]
-    // #[ignore = "not right now"]
+    #[ignore = "not right now"]
     fn generate_structs() {
+        let attrs = quote! {
+            Bar, Baz
+        };
+
         let input = quote! {
-            #[variants(Bar, Baz)]
             struct Foo {
-                #[variants(include(Bar, Ban))]
+                #[variants(include(Bar))]
                 #[variants(include(Baz), retype = "Option<{}>")]
                 bar: usize,
 
                 #[variants(include(Baz), retype = "Option<{}>")]
-                #[other(some_setting)]
+                #[some(other = "stuff")]
                 baz: f64,
 
                 // `bat` will not be included in FooBar or FooBaz.
-                /// This doc-comment and other non-`variants` attributes will.
                 bat: String,
 
-                // Foo will automatically be renamed into its variants.
-                recurse: Foo,
-                recurse_vec: Vec<Foo>,
+                #[variants(include(Bar, Baz), retype = "Option<{b}{v}>")]
+                recurse: Option<Foo>,
             }
         };
 
-        let mut input_ast = parse2::<Item>(input).expect("input must be parsable by syn");
-        let mut errors = Vec::new();
-        let variant = Some(Ident::new("Bar".into(), Span::call_site()));
-
-        ItemVisitor::new(&variant, &mut errors).visit_item_mut(&mut input_ast);
+        // prepare
+        let mut item = parse2::<Item>(input).expect("failed to parse item");
+        let ctx = parse2::<Context2>(attrs).expect("failed to parse attributes");
+        let mut item_ctx = ItemContext::new(&ctx);
+        item_ctx.visit_item_mut(&mut item);
 
         println!(
             "{}",
             prettyplease::unparse(&syn::File {
                 shebang: None,
                 attrs: vec![],
-                items: vec![input_ast]
+                items: vec![item.clone()]
             })
         );
 
-        println!("{:#?}\n", errors);
+        if let Some(error) = item_ctx.errors.combine() {
+            println!("{:#?}\n", error);
+        }
+
+        // expand base
+        let mut expanded_item = item.clone();
+        let expansion_ctx = expanders::Context::new(None);
+        let mut item_expander = ItemExpander::new(&expansion_ctx, &item_ctx);
+        item_expander.visit_item_mut(&mut expanded_item);
+
+        println!(
+            "{}",
+            prettyplease::unparse(&syn::File {
+                shebang: None,
+                attrs: vec![],
+                items: vec![expanded_item]
+            })
+        );
+
+        if let Some(error) = item_expander.errors.combine() {
+            println!("{:#?}\n", error);
+        }
+
+        // expand variants
+        for variant in &ctx.variants {
+            let mut expanded_item = item.clone();
+            let expansion_ctx = expanders::Context::new(Some(variant));
+            let mut item_expander = ItemExpander::new(&expansion_ctx, &item_ctx);
+            item_expander.visit_item_mut(&mut expanded_item);
+
+            println!(
+                "{}",
+                prettyplease::unparse(&syn::File {
+                    shebang: None,
+                    attrs: vec![],
+                    items: vec![expanded_item]
+                })
+            );
+
+            if let Some(error) = item_expander.errors.combine() {
+                println!("{:#?}\n", error);
+            }
+        }
     }
 
     #[test]
     // #[ignore = "not right now"]
     fn generate_impls() {
+        let attrs = quote! {
+            Bar, Baz
+        };
+
         let input = quote! {
-            #[variants(Bar, Baz)]
             impl Foo {
                 const NAME: &'static str = type_str!();
 
                 fn new() -> Self {
                     let _ = "Expression in all variants";
-                    let _: variant_type!() = Bar {};
+                    let _ = type_str!();
 
                     match variant_str!() {
                         "Bar" | "Baz" => {
                             let _ = "Block only in FooBar and FooBaz";
                         }
                         _ => {
-                            let _ = "Block not in FooBar nor FooBaz";
+                            let _ = "Block not in FooBar or FooBaz";
                         }
                     }
 
                     if variant_str!() == "Bar" {
-                        let _ = "Block only in FooBar";
+                        let _ = "Expression only in FooBar";
                     }
 
                     #[variants(include())]
                     let _ = "Expression only in Foo";
 
-                    // This macro should be in an expression
-                    variant_str!();
+                    // Error: this macro should be in an expression
+                    // variant_str!();
 
-                    Foo::hi();
+                    // The current variant should always be references with `Self`
+                    Self::hi();
 
                     Self {
                         /// `bar` and `baz` will be included in all variants
@@ -97,26 +148,68 @@ mod tests {
                 }
 
                 fn hi() {
-                    println("Hi, {}!", Foo::NAME);
+                    println("Hi, {}!", Self::NAME);
                 }
             }
         };
 
-        let mut input_ast = parse2::<Item>(input).expect("input must be parsable by syn");
-        let mut errors = Vec::new();
-        let variant = Some(Ident::new("Bar".into(), Span::call_site()));
-
-        ItemVisitor::new(&variant, &mut errors).visit_item_mut(&mut input_ast);
+        // prepare
+        let mut item = parse2::<Item>(input).expect("failed to parse item");
+        let ctx = parse2::<Context2>(attrs).expect("failed to parse attributes");
+        let mut item_ctx = ItemContext::new(&ctx);
+        item_ctx.visit_item_mut(&mut item);
 
         println!(
             "{}",
             prettyplease::unparse(&syn::File {
                 shebang: None,
                 attrs: vec![],
-                items: vec![input_ast]
+                items: vec![item.clone()]
             })
         );
 
-        println!("{:#?}\n", errors);
+        if let Some(error) = item_ctx.errors.combine() {
+            println!("{:#?}\n", error);
+        }
+
+        // expand base
+        let mut expanded_item = item.clone();
+        let expansion_ctx = expanders::Context::new(None);
+        let mut item_expander = ItemExpander::new(&expansion_ctx, &item_ctx);
+        item_expander.visit_item_mut(&mut expanded_item);
+
+        println!(
+            "{}",
+            prettyplease::unparse(&syn::File {
+                shebang: None,
+                attrs: vec![],
+                items: vec![expanded_item]
+            })
+        );
+
+        if let Some(error) = item_expander.errors.combine() {
+            println!("{:#?}\n", error);
+        }
+
+        // expand variants
+        for variant in &ctx.variants {
+            let mut expanded_item = item.clone();
+            let expansion_ctx = expanders::Context::new(Some(variant));
+            let mut item_expander = ItemExpander::new(&expansion_ctx, &item_ctx);
+            item_expander.visit_item_mut(&mut expanded_item);
+
+            println!(
+                "{}",
+                prettyplease::unparse(&syn::File {
+                    shebang: None,
+                    attrs: vec![],
+                    items: vec![expanded_item]
+                })
+            );
+
+            if let Some(error) = item_expander.errors.combine() {
+                println!("{:#?}\n", error);
+            }
+        }
     }
 }
