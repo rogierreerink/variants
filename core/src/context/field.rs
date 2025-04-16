@@ -5,16 +5,16 @@ use syn::{Error, Field, Ident, LitStr, visit_mut::VisitMut};
 
 use crate::errors::ErrorsExt;
 
-use super::Context2;
+use super::Context;
 
 pub struct FieldContext<'a> {
-    pub context: &'a Context2,
+    pub context: &'a Context,
     pub settings: HashMap<Ident, VariantSettings>,
     pub errors: Vec<Error>,
 }
 
 impl<'a> FieldContext<'a> {
-    pub fn new(context: &'a Context2) -> Self {
+    pub fn new(context: &'a Context) -> Self {
         Self {
             context,
             settings: HashMap::new(),

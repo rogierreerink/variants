@@ -1,17 +1,17 @@
 use proc_macro2::Span;
 use syn::{Error, Item, ItemImpl, ItemStruct, visit_mut::VisitMut};
 
-use super::{Context2, r#impl::ImplContext, r#struct::StructContext};
+use super::{Context, r#impl::ImplContext, r#struct::StructContext};
 
 pub struct ItemContext<'a> {
-    pub context: &'a Context2,
+    pub context: &'a Context,
     pub impl_ctx: Option<ImplContext>,
     pub struct_ctx: Option<StructContext<'a>>,
     pub errors: Vec<Error>,
 }
 
 impl<'a> ItemContext<'a> {
-    pub fn new(context: &'a Context2) -> Self {
+    pub fn new(context: &'a Context) -> Self {
         Self {
             context,
             impl_ctx: None,

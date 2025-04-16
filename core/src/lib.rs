@@ -2,12 +2,11 @@ pub mod context;
 pub mod errors;
 pub mod expanders;
 pub mod utilities;
-pub mod visitors;
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        context::{Context2, item::ItemContext},
+        context::{Context, item::ItemContext},
         errors::ErrorsExt,
         expanders::{self, item::ItemExpander},
     };
@@ -42,7 +41,7 @@ mod tests {
 
         // prepare
         let mut item = parse2::<Item>(input).expect("failed to parse item");
-        let ctx = parse2::<Context2>(attrs).expect("failed to parse attributes");
+        let ctx = parse2::<Context>(attrs).expect("failed to parse attributes");
         let mut item_ctx = ItemContext::new(&ctx);
         item_ctx.visit_item_mut(&mut item);
 
@@ -155,7 +154,7 @@ mod tests {
 
         // prepare
         let mut item = parse2::<Item>(input).expect("failed to parse item");
-        let ctx = parse2::<Context2>(attrs).expect("failed to parse attributes");
+        let ctx = parse2::<Context>(attrs).expect("failed to parse attributes");
         let mut item_ctx = ItemContext::new(&ctx);
         item_ctx.visit_item_mut(&mut item);
 

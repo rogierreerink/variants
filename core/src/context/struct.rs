@@ -1,15 +1,15 @@
 use syn::{Error, Field, ItemStruct, visit_mut::VisitMut};
 
-use super::{Context2, field::FieldContext};
+use super::{Context, field::FieldContext};
 
 pub struct StructContext<'a> {
-    pub context: &'a Context2,
+    pub context: &'a Context,
     pub field_ctxs: Vec<FieldContext<'a>>,
     pub errors: Vec<Error>,
 }
 
 impl<'a> StructContext<'a> {
-    pub fn new(context: &'a Context2) -> Self {
+    pub fn new(context: &'a Context) -> Self {
         Self {
             context,
             field_ctxs: Vec::new(),
