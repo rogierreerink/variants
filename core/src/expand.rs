@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::quote;
 use syn::{Item, parse2, visit_mut::VisitMut};
 
 use crate::{
@@ -38,7 +38,10 @@ pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
     let expansion_ctx = expanders::Context::new(None);
     let mut item_expander = ItemExpander::new(&expansion_ctx, &item_ctx);
     item_expander.visit_item_mut(&mut expanded_item);
-    output.extend(expanded_item.to_token_stream());
+
+    output.extend(quote! {
+        #expanded_item
+    });
 
     if let Some(error) = item_expander.errors.combine() {
         output.extend(error.into_compile_error());
@@ -52,7 +55,11 @@ pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
         let expansion_ctx = expanders::Context::new(Some(variant));
         let mut item_expander = ItemExpander::new(&expansion_ctx, &item_ctx);
         item_expander.visit_item_mut(&mut expanded_item);
-        output.extend(expanded_item.to_token_stream());
+
+        output.extend(quote! {
+            #[automatically_derived]
+            #expanded_item
+        });
 
         if let Some(error) = item_expander.errors.combine() {
             output.extend(error.into_compile_error());
@@ -70,7 +77,6 @@ mod tests {
     use quote::quote;
 
     #[test]
-    // #[ignore = "not right now"]
     fn generate_structs() {
         let attr = quote! {
             Bar, Baz
@@ -120,7 +126,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "not right now"]
     fn generate_impls() {
         let attr = quote! {
             Bar
