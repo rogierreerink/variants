@@ -1,9 +1,3 @@
-#[cfg(test)]
-use std::time::Instant;
-
-#[cfg(test)]
-use colored::Colorize;
-
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Item, parse2, visit_mut::VisitMut};
@@ -15,9 +9,6 @@ use crate::{
 };
 
 pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
-    #[cfg(test)]
-    let time_start = Instant::now();
-
     let mut item = match parse2::<Item>(input) {
         Ok(item) => item,
         Err(error) => return error.to_compile_error(),
@@ -75,23 +66,16 @@ pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
         }
     }
 
-    #[cfg(test)]
-    {
-        let time_end = Instant::now();
-        let duration = time_end - time_start;
-        println!(
-            "{}",
-            format!("{} duration: {}us", module_path!(), duration.as_micros()).yellow(),
-        );
-    }
-
     output
 }
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
+
     use crate::expand::expand;
 
+    use colored::Colorize;
     use proc_macro2::TokenStream;
     use quote::quote;
 
@@ -141,7 +125,12 @@ mod tests {
             }
         };
 
-        assert_eq_token_streams(&expand(attr, input), &expect);
+        let time_start = Instant::now();
+        let expanded = expand(attr, input);
+        let time_end = Instant::now();
+
+        assert_eq_token_streams(&expanded, &expect);
+        assess_expansion_duration(time_start, time_end, 2000);
     }
 
     #[test]
@@ -253,12 +242,15 @@ mod tests {
             }
         };
 
-        assert_eq_token_streams(&expand(attr, input), &expect);
+        let time_start = Instant::now();
+        let expanded = expand(attr, input);
+        let time_end = Instant::now();
+
+        assert_eq_token_streams(&expanded, &expect);
+        assess_expansion_duration(time_start, time_end, 2000);
     }
 
-    /// Pretty compare token streams for equality.
-    ///
-    pub fn assert_eq_token_streams(a: &TokenStream, b: &TokenStream) {
+    fn assert_eq_token_streams(a: &TokenStream, b: &TokenStream) {
         let a_str = a.to_string();
         let a_parsed = syn::parse_file(&a_str).unwrap();
         let a_pretty = prettyplease::unparse(&a_parsed);
@@ -268,5 +260,15 @@ mod tests {
         let b_pretty = prettyplease::unparse(&b_parsed);
 
         pretty_assertions::assert_eq!(a_pretty, b_pretty);
+    }
+
+    fn assess_expansion_duration(start: Instant, end: Instant, lt_us: u128) {
+        let duration = (end - start).as_micros();
+        let duration_str = format!("expansion duration: {}us", duration);
+        if duration >= lt_us {
+            println!("{}", duration_str.red(),);
+        } else {
+            println!("{}", duration_str.yellow(),);
+        }
     }
 }
