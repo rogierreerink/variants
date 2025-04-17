@@ -125,4 +125,32 @@ mod tests {
         let _ = FooSummary::Tuple(Some("hola".into()));
         let _ = FooSummary::Other;
     }
+
+    #[test]
+    fn derive_enum_impl() {
+        #[variants(Summary)]
+        #[allow(dead_code)]
+        enum Foo {
+            Some {
+                #[variants(include(Summary))]
+                id: usize,
+                name: String,
+            },
+            Other,
+        }
+
+        #[variants(Summary)]
+        impl Foo {
+            fn new_some() -> Self {
+                Self::Some {
+                    #[variants(include(Summary))]
+                    id: 0,
+                    name: "hello".into(),
+                }
+            }
+        }
+
+        let _ = Foo::new_some();
+        let _ = FooSummary::new_some();
+    }
 }
