@@ -30,18 +30,18 @@ impl VisitMut for BlockExpander<'_> {
         node.stmts = node
             .stmts
             .iter_mut()
-            .filter_map(|stmt_node| {
-                let stmt_ctx = match self.stmt_ctxs.get(stmt_node) {
+            .filter_map(|stmt| {
+                let stmt_ctx = match self.stmt_ctxs.get(stmt) {
                     Some(context) => context,
-                    None => return Some(stmt_node.clone()),
+                    None => return Some(stmt.clone()),
                 };
 
                 let mut stmt_expander = StmtExpander::new(self.context, stmt_ctx);
-                stmt_expander.visit_stmt_mut(stmt_node);
+                stmt_expander.visit_stmt_mut(stmt);
                 self.errors.append(&mut stmt_expander.errors);
 
                 if stmt_expander.print_stmt {
-                    Some(stmt_node.clone())
+                    Some(stmt.clone())
                 } else {
                     None
                 }

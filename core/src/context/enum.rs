@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 
-use syn::{Error, Field, ItemStruct, visit_mut::VisitMut};
+use syn::{Error, Field, Variant, visit_mut::VisitMut};
 
 use super::{Context, field::FieldContext};
 
-pub struct StructContext<'a> {
+pub struct EnumContext<'a> {
     pub context: &'a Context,
     pub field_ctxs: HashMap<Field, FieldContext<'a>>,
     pub errors: Vec<Error>,
 }
 
-impl<'a> StructContext<'a> {
+impl<'a> EnumContext<'a> {
     pub fn new(context: &'a Context) -> Self {
         Self {
             context,
@@ -20,8 +20,8 @@ impl<'a> StructContext<'a> {
     }
 }
 
-impl VisitMut for StructContext<'_> {
-    fn visit_item_struct_mut(&mut self, node: &mut ItemStruct) {
+impl VisitMut for EnumContext<'_> {
+    fn visit_variant_mut(&mut self, node: &mut Variant) {
         self.visit_fields_mut(&mut node.fields);
     }
 

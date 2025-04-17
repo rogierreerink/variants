@@ -3,6 +3,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
+pub mod r#enum;
 pub mod field;
 pub mod field_value;
 pub mod r#impl;

@@ -1,35 +1,45 @@
-use syn::{Error, ItemStruct, visit_mut::VisitMut};
+use syn::{Error, ItemEnum, Variant, visit_mut::VisitMut};
 
 use crate::{
-    context::r#struct::StructContext,
+    context::r#enum::EnumContext,
     utilities::{fields_ext::FieldsExt, ident_ext::IdentExt},
 };
 
 use super::{Context, field::FieldExpander};
 
-pub struct StructExpander<'a> {
+pub struct EnumExpander<'a> {
     context: &'a Context<'a>,
-    struct_ctx: &'a StructContext<'a>,
+    enum_ctx: &'a EnumContext<'a>,
     pub errors: Vec<Error>,
 }
 
-impl<'a> StructExpander<'a> {
-    pub fn new(context: &'a Context, struct_ctx: &'a StructContext<'a>) -> Self {
+impl<'a> EnumExpander<'a> {
+    pub fn new(context: &'a Context, enum_ctx: &'a EnumContext<'a>) -> Self {
         Self {
             context,
-            struct_ctx,
+            enum_ctx,
             errors: Vec::new(),
         }
     }
 }
 
-impl VisitMut for StructExpander<'_> {
-    fn visit_item_struct_mut(&mut self, node: &mut ItemStruct) {
+impl VisitMut for EnumExpander<'_> {
+    fn visit_item_enum_mut(&mut self, node: &mut ItemEnum) {
+        for variant in &mut node.variants {
+            self.visit_variant_mut(variant);
+        }
+
+        if let Some(variant) = self.context.variant {
+            node.ident = node.ident.from_appendix(variant);
+        }
+    }
+
+    fn visit_variant_mut(&mut self, node: &mut Variant) {
         let print_fields = node
             .fields
             .iter_mut()
             .filter_map(|field| {
-                let field_ctx = match self.struct_ctx.field_ctxs.get(field) {
+                let field_ctx = match self.enum_ctx.field_ctxs.get(field) {
                     Some(context) => context,
                     None => return None,
                 };
@@ -47,9 +57,5 @@ impl VisitMut for StructExpander<'_> {
             .collect::<Vec<_>>();
 
         node.fields.replace_fields(print_fields);
-
-        if let Some(variant) = self.context.variant {
-            node.ident = node.ident.from_appendix(variant);
-        }
     }
 }

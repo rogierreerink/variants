@@ -30,19 +30,19 @@ impl VisitMut for ExprStructExpander<'_> {
         let print_fields = node
             .fields
             .iter_mut()
-            .filter_map(|field_value_node| {
-                let field_value_ctx = match self.field_value_ctxs.get(field_value_node) {
+            .filter_map(|field_value| {
+                let field_value_ctx = match self.field_value_ctxs.get(field_value) {
                     Some(context) => context,
                     None => return None,
                 };
 
                 let mut field_value_expander =
                     FieldValueExpander::new(self.context, field_value_ctx);
-                field_value_expander.visit_field_value_mut(field_value_node);
+                field_value_expander.visit_field_value_mut(field_value);
                 self.errors.append(&mut field_value_expander.errors);
 
                 if field_value_expander.print_field {
-                    Some(field_value_node.clone())
+                    Some(field_value.clone())
                 } else {
                     None
                 }

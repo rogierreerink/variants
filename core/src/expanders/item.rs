@@ -1,9 +1,9 @@
 use proc_macro2::Span;
-use syn::{Error, Item, ItemImpl, ItemStruct, visit_mut::VisitMut};
+use syn::{Error, Item, ItemEnum, ItemImpl, ItemStruct, visit_mut::VisitMut};
 
 use crate::context::item::ItemContext;
 
-use super::{Context, r#impl::ImplExpander, r#struct::StructExpander};
+use super::{Context, r#enum::EnumExpander, r#impl::ImplExpander, r#struct::StructExpander};
 
 pub struct ItemExpander<'a> {
     context: &'a Context<'a>,
@@ -24,12 +24,30 @@ impl<'a> ItemExpander<'a> {
 impl VisitMut for ItemExpander<'_> {
     fn visit_item_mut(&mut self, node: &mut Item) {
         match node {
+            Item::Enum(item) => self.visit_item_enum_mut(item),
             Item::Impl(item) => self.visit_item_impl_mut(item),
             Item::Struct(item) => self.visit_item_struct_mut(item),
             _ => self
                 .errors
                 .push(Error::new(Span::call_site(), "item not supported")),
         }
+    }
+
+    fn visit_item_enum_mut(&mut self, node: &mut ItemEnum) {
+        let enum_ctx = match &self.item.enum_ctx {
+            Some(context) => context,
+            None => {
+                self.errors.push(Error::new(
+                    Span::call_site(),
+                    "bug: enum context should exist",
+                ));
+                return;
+            }
+        };
+
+        let mut enum_expander = EnumExpander::new(&mut self.context, &enum_ctx);
+        enum_expander.visit_item_enum_mut(node);
+        self.errors.append(&mut enum_expander.errors);
     }
 
     fn visit_item_impl_mut(&mut self, node: &mut ItemImpl) {

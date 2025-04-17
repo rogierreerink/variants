@@ -9,9 +9,11 @@ mod tests {
         struct Foo {
             #[variants(include(Summary))]
             bar: usize,
+
             #[variants(include(Summary))]
             #[variants(include(Update), retype = "Option<{}>")]
             baz: String,
+
             #[variants(include(Update), retype = "Option<Box<{b}{v}>>")]
             ban: Option<Box<Foo>>,
         }
@@ -93,5 +95,34 @@ mod tests {
 
         assert_eq!(&Foo::hello(), "Hello, Foo");
         assert_eq!(&FooSummary::hello(), "Hola, FooSummary");
+    }
+
+    #[test]
+    fn derive_enum() {
+        #[variants(Summary)]
+        #[allow(dead_code)]
+        enum Foo {
+            Some {
+                #[variants(include(Summary))]
+                id: usize,
+                name: String,
+            },
+            Tuple(
+                u64,
+                #[variants(include(Summary), retype = "Option<{}>")] String,
+            ),
+            Other,
+        }
+
+        let _ = Foo::Some {
+            id: 0,
+            name: "Bar".into(),
+        };
+        let _ = Foo::Tuple(0, "hi".into());
+        let _ = Foo::Other;
+
+        let _ = FooSummary::Some { id: 0 };
+        let _ = FooSummary::Tuple(Some("hola".into()));
+        let _ = FooSummary::Other;
     }
 }

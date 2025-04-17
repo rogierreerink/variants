@@ -1,6 +1,7 @@
 use syn::Ident;
 
 pub mod block;
+pub mod r#enum;
 pub mod expr_structs;
 pub mod field;
 pub mod field_value;

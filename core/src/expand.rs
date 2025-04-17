@@ -80,7 +80,7 @@ mod tests {
     use quote::quote;
 
     #[test]
-    fn expand_structs() {
+    fn expand_named_structs() {
         let attr = quote! {
             Bar, Baz
         };
@@ -123,6 +123,60 @@ mod tests {
                 baz: Option<f64>,
                 recurse: Option<FooBaz>,
             }
+        };
+
+        let time_start = Instant::now();
+        let expanded = expand(attr, input);
+        let time_end = Instant::now();
+
+        assert_eq_token_streams(&expanded, &expect);
+        assess_expansion_duration(time_start, time_end, 2000);
+    }
+
+    #[test]
+    fn expand_unnamed_structs() {
+        let attr = quote! {
+            Bar, Baz
+        };
+
+        let input = quote! {
+            struct Foo (
+                #[variants(include(Bar))]
+                #[variants(include(Baz), retype = "Option<{}>")]
+                usize,
+
+                #[variants(include(Baz), retype = "Option<{}>")]
+                #[some(other = "stuff")]
+                f64,
+
+                // `bat` will not be included in FooBar or FooBaz.
+                String,
+
+                #[variants(include(Bar, Baz), retype = "Option<{b}{v}>")]
+                Option<Foo>,
+            );
+        };
+
+        let expect = quote! {
+            struct Foo (
+                usize,
+                #[some(other = "stuff")]
+                f64,
+                String,
+                Option<Foo>,
+            );
+            #[automatically_derived]
+            struct FooBar (
+                usize,
+                Option<FooBar>,
+            );
+            #[automatically_derived]
+            struct FooBaz (
+                Option<usize>,
+                #[some(other = "stuff")]
+                Option<f64>,
+                Option<FooBaz>,
+            );
         };
 
         let time_start = Instant::now();
@@ -239,6 +293,75 @@ mod tests {
                 fn hi() {
                     println("Hi, {}!", Self::NAME);
                 }
+            }
+        };
+
+        let time_start = Instant::now();
+        let expanded = expand(attr, input);
+        let time_end = Instant::now();
+
+        assert_eq_token_streams(&expanded, &expect);
+        assess_expansion_duration(time_start, time_end, 2000);
+    }
+
+    #[test]
+    fn expand_enum() {
+        let attr = quote! {
+            Bar, Baz
+        };
+
+        let input = quote! {
+            enum Foo {
+                Struct {
+                    #[variants(include(Bar, Baz))]
+                    id: usize,
+
+                    #[variants(include(Bar), retype = "Box<{t}>")]
+                    name: String,
+                },
+                Tuple (
+                    #[variants(include(Bar))]
+                    u64,
+
+                    #[variants(include(Baz), retype = "Option<{t}>")]
+                    String
+                ),
+                Empty,
+            }
+        };
+
+        let expect = quote! {
+            enum Foo {
+                Struct {
+                    id: usize,
+                    name: String,
+                },
+                Tuple (
+                    u64,
+                    String
+                ),
+                Empty,
+            }
+            #[automatically_derived]
+            enum FooBar {
+                Struct {
+                    id: usize,
+                    name: Box<String>,
+                },
+                Tuple (
+                    u64
+                ),
+                Empty,
+            }
+            #[automatically_derived]
+            enum FooBaz {
+                Struct {
+                    id: usize,
+                },
+                Tuple (
+                    Option<String>
+                ),
+                Empty,
             }
         };
 
