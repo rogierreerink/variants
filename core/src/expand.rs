@@ -1,3 +1,9 @@
+#[cfg(test)]
+use std::time::Instant;
+
+#[cfg(test)]
+use colored::Colorize;
+
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Item, parse2, visit_mut::VisitMut};
@@ -9,6 +15,9 @@ use crate::{
 };
 
 pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
+    #[cfg(test)]
+    let time_start = Instant::now();
+
     let mut item = match parse2::<Item>(input) {
         Ok(item) => item,
         Err(error) => return error.to_compile_error(),
@@ -64,6 +73,16 @@ pub fn expand(attr: TokenStream, input: TokenStream) -> TokenStream {
         if let Some(error) = item_expander.errors.combine() {
             output.extend(error.into_compile_error());
         }
+    }
+
+    #[cfg(test)]
+    {
+        let time_end = Instant::now();
+        let duration = time_end - time_start;
+        println!(
+            "{}",
+            format!("{} duration: {}us", module_path!(), duration.as_micros()).yellow(),
+        );
     }
 
     output
