@@ -29,24 +29,13 @@ impl VisitMut for FieldValueContext<'_> {
     }
 
     fn visit_attributes_mut(&mut self, node: &mut Vec<syn::Attribute>) {
-        let attributes = node
-            .iter()
-            .filter_map(|attr| {
-                if !attr.path().is_ident("variants") {
-                    return None;
-                }
-
-                match VariantAttribute::from_meta(&attr.meta) {
-                    Ok(attr) => Some(attr),
-                    Err(error) => {
-                        self.errors.push(error);
-                        None
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
-
-        node.retain(|attribute| !attribute.path().is_ident("variants"));
+        let attributes = match VariantAttribute::extract_from_attributes(node, "variants") {
+            Ok(attrs) => attrs,
+            Err(error) => {
+                self.errors.push(error);
+                return;
+            }
+        };
 
         self.settings = attributes.iter().fold(HashMap::new(), |mut acc, attr| {
             for variant in &attr.include {

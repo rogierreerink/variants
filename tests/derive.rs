@@ -13,6 +13,7 @@ mod tests {
             #[variants(include(Update), retype = "Option<{}>")]
             baz: String,
             #[variants(include(Update), retype = "Option<Box<{b}{v}>>")]
+            // #[variants()]
             ban: Option<Box<Foo>>,
         }
 
