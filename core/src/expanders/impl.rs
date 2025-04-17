@@ -5,6 +5,7 @@ use crate::{context::r#impl::ImplContext, utilities::type_ext::TypePathExt};
 
 use super::{
     Context,
+    block::BlockExpander,
     expr_structs::ExprStructExpander,
     macros::{type_str::TypeStrMacro, variant_str::VariantStrMacro},
 };
@@ -50,6 +51,10 @@ impl VisitMut for ImplExpander<'_> {
             ExprStructExpander::new(self.context, &self.impl_ctx.field_value_ctxs);
         expr_struct_expander.visit_item_impl_mut(node);
         self.errors.append(&mut expr_struct_expander.errors);
+
+        let mut block_expander = BlockExpander::new(self.context, &self.impl_ctx.stmt_ctxs);
+        block_expander.visit_item_impl_mut(node);
+        self.errors.append(&mut block_expander.errors);
 
         if let Some(variant) = self.context.variant {
             node.self_ty = Box::new(ty_path.from_appendix(variant).into_type());

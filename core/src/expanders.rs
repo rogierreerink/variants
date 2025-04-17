@@ -1,11 +1,13 @@
 use syn::Ident;
 
+pub mod block;
 pub mod expr_structs;
 pub mod field;
 pub mod field_value;
 pub mod r#impl;
 pub mod item;
 pub mod macros;
+pub mod stmt;
 pub mod r#struct;
 
 pub struct Context<'a> {

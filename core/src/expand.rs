@@ -152,7 +152,7 @@ mod tests {
                         let _ = "Expression only in FooBar";
                     }
 
-                    #[variants(include())]
+                    #[variants(exclude(Bar))]
                     let _ = "Expression only in Foo";
 
                     // Error: this macro should be in an expression
