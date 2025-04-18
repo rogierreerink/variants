@@ -29,7 +29,7 @@ impl VisitMut for FieldValueContext<'_> {
     }
 
     fn visit_attributes_mut(&mut self, node: &mut Vec<syn::Attribute>) {
-        let attributes = match VariantAttribute::extract_from_attributes(node, "variants") {
+        let attributes = match VariantAttribute::from_attributes(node, "variants") {
             Ok(attrs) => attrs,
             Err(error) => {
                 self.errors.push(error);

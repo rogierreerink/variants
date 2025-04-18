@@ -127,30 +127,48 @@ mod tests {
     }
 
     #[test]
-    fn derive_enum_impl() {
+    fn derive_enum_and_struct() {
         #[variants(Summary)]
         #[allow(dead_code)]
         enum Foo {
             Some {
                 #[variants(include(Summary))]
                 id: usize,
-                name: String,
+                name: Boo,
             },
-            Other,
+            Other {
+                #[variants(include(Summary))]
+                name: Boo,
+            },
         }
 
         #[variants(Summary)]
         impl Foo {
-            fn new_some() -> Self {
+            fn new() -> Self {
                 Self::Some {
                     #[variants(include(Summary))]
                     id: 0,
-                    name: "hello".into(),
+                    name: Boo::new(),
                 }
             }
         }
 
-        let _ = Foo::new_some();
-        let _ = FooSummary::new_some();
+        #[allow(dead_code)]
+        struct Boo {
+            id: usize,
+            name: String,
+        }
+
+        impl Boo {
+            fn new() -> Self {
+                Self {
+                    id: 0,
+                    name: "hi".into(),
+                }
+            }
+        }
+
+        let _: Foo = Foo::new();
+        let _: FooSummary = FooSummary::new();
     }
 }

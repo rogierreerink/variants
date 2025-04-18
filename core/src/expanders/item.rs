@@ -1,7 +1,7 @@
 use proc_macro2::Span;
 use syn::{Error, Item, ItemEnum, ItemImpl, ItemStruct, visit_mut::VisitMut};
 
-use crate::context::item::ItemContext;
+use crate::{context::item::ItemContext, utilities::attribute_remover::AttributeRemover};
 
 use super::{Context, r#enum::EnumExpander, r#impl::ImplExpander, r#struct::StructExpander};
 
@@ -31,6 +31,20 @@ impl VisitMut for ItemExpander<'_> {
                 .errors
                 .push(Error::new(Span::call_site(), "item not supported")),
         }
+
+        // Variant attributes are removed only at the very last step, as attributes play a role in
+        // matching certain contexts to nodes. For example, field value contexts are stored in a
+        // HashMap, with the field node hash as the key. If multiple field values with the same name,
+        // type, visibility, etc exist anywhere in the item, they still may be having different
+        // attributes, which determine how they must be processed. Keeping the attributes up until
+        // all processing has been done solves this issue. If identical at different locations in
+        // the item also share the same attributes, they might as well be stored under the same key.
+        //
+        // I would rather be able to uniquely identify nodes in more definitive way, such as with
+        // span info, like line and column number or byte range, however: 1) this info is not stable
+        // just yet, and more significantly, 2) this doesn't work in tests using `quote` to generate
+        // input, as `quote` doesn't provide such information.
+        AttributeRemover::new().visit_item_mut(node);
     }
 
     fn visit_item_enum_mut(&mut self, node: &mut ItemEnum) {

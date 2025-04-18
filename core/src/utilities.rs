@@ -1,3 +1,4 @@
+pub mod attribute_remover;
 pub mod errors_ext;
 pub mod fields_ext;
 pub mod ident_ext;
