@@ -98,6 +98,29 @@ mod tests {
     }
 
     #[test]
+    fn derive_impl_of_generic_param() {
+        trait Hello {
+            fn hello(&self) -> String;
+        }
+
+        #[variants(Summary)]
+        struct Foo;
+
+        #[variants(Summary)]
+        impl Hello for Vec<base!(Foo)> {
+            fn hello(&self) -> String {
+                type_str!().into()
+            }
+        }
+
+        let foo = vec![Foo];
+        let foo_sum = vec![FooSummary];
+
+        assert_eq!(&foo.hello(), "Foo");
+        assert_eq!(&foo_sum.hello(), "FooSummary");
+    }
+
+    #[test]
     fn derive_enum() {
         #[variants(Summary)]
         #[allow(dead_code)]

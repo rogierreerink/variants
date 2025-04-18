@@ -7,7 +7,10 @@ use super::{
     Context,
     block::BlockExpander,
     expr_structs::ExprStructExpander,
-    macros::{type_str::TypeStrMacro, variant_str::VariantStrMacro},
+    macros::{
+        base::BaseMacro, replace_base::ReplaceBaseMacro, type_str::TypeStrMacro,
+        variant_str::VariantStrMacro,
+    },
 };
 
 pub struct ImplExpander<'a> {
@@ -28,7 +31,16 @@ impl<'a> ImplExpander<'a> {
 
 impl VisitMut for ImplExpander<'_> {
     fn visit_item_impl_mut(&mut self, node: &mut ItemImpl) {
-        let ty_path = match node.self_ty.as_ref().clone() {
+        let mut base_macro = BaseMacro::new();
+        base_macro.visit_type_mut(&mut node.self_ty);
+        self.errors.append(&mut base_macro.errors);
+
+        let base_ty = base_macro
+            .base_type
+            .clone()
+            .unwrap_or(node.self_ty.as_ref().clone());
+
+        let ty_path = match &base_ty {
             Type::Path(ty_path) => ty_path,
             _ => {
                 self.errors.push(Error::new(
@@ -56,7 +68,11 @@ impl VisitMut for ImplExpander<'_> {
         block_expander.visit_item_impl_mut(node);
         self.errors.append(&mut block_expander.errors);
 
-        if let Some(variant) = self.context.variant {
+        if let Some(base_ty) = base_macro.base_type {
+            let mut replace_base_macro = ReplaceBaseMacro::new(base_ty, &self.context.variant);
+            replace_base_macro.visit_type_mut(&mut node.self_ty);
+            self.errors.append(&mut replace_base_macro.errors);
+        } else if let Some(variant) = self.context.variant {
             node.self_ty = Box::new(ty_path.from_appendix(variant).into_type());
         }
     }
