@@ -123,6 +123,32 @@ mod tests {
     }
 
     #[test]
+    fn derive_vary_expr_type() {
+        #[variants(Summary)]
+        #[allow(dead_code)]
+        struct Foo {
+            #[variants(include(Summary))]
+            id: usize,
+            bar: String,
+        }
+
+        #[variants(Summary)]
+        impl Foo {
+            fn new() -> Self {
+                #[variants(include(Summary), vary_type)]
+                Foo {
+                    #[variants(include(Summary))]
+                    id: 0,
+                    bar: "hola, mundo".into(),
+                }
+            }
+        }
+
+        let _ = Foo::new();
+        let _ = FooSummary::new();
+    }
+
+    #[test]
     fn derive_enum() {
         #[variants(Summary)]
         #[allow(dead_code)]

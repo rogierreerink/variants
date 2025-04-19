@@ -34,7 +34,6 @@ impl VisitMut for ImplContext<'_> {
     }
 
     fn visit_stmt_mut(&mut self, node: &mut Stmt) {
-        // Field values must be processed first
         visit_stmt_mut(self, node);
 
         let mut stmt_ctx = StmtContext::new(self.context);

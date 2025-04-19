@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use squattr::{attribute::Attribute, derive::Squattr};
-use syn::{Error, Ident, Local, visit_mut::VisitMut};
+use syn::{Error, Expr, Ident, Stmt, spanned::Spanned, visit_mut::VisitMut};
 
 use crate::utilities::errors_ext::ErrorsExt;
 
@@ -24,8 +24,20 @@ impl<'a> StmtContext<'a> {
 }
 
 impl VisitMut for StmtContext<'_> {
-    fn visit_local_mut(&mut self, node: &mut Local) {
-        self.visit_attributes_mut(&mut node.attrs);
+    fn visit_stmt_mut(&mut self, node: &mut Stmt) {
+        match node {
+            Stmt::Local(local) => self.visit_attributes_mut(&mut local.attrs),
+            Stmt::Expr(expr, ..) => match expr {
+                Expr::Struct(expr) => self.visit_attributes_mut(&mut expr.attrs),
+                _ => {}
+            },
+            _ => {
+                self.errors.push(Error::new(
+                    node.span(),
+                    "attributes in this location not supported",
+                ));
+            }
+        }
     }
 
     fn visit_attributes_mut(&mut self, node: &mut Vec<syn::Attribute>) {
@@ -52,6 +64,7 @@ impl VisitMut for StmtContext<'_> {
                         VariantSettings {
                             variant: variant.clone(),
                             include: true,
+                            vary_type: attr.vary_type,
                         },
                     ) {
                         self.errors.push(Error::new(
@@ -76,6 +89,7 @@ impl VisitMut for StmtContext<'_> {
                         VariantSettings {
                             variant: variant.clone(),
                             include: false,
+                            vary_type: attr.vary_type,
                         },
                     ) {
                         self.errors.push(Error::new(
@@ -95,10 +109,12 @@ impl VisitMut for StmtContext<'_> {
 struct VariantAttribute {
     include: Option<Vec<Ident>>,
     exclude: Option<Vec<Ident>>,
+    vary_type: bool,
 }
 
 #[derive(Clone, Debug)]
 pub struct VariantSettings {
     pub variant: Ident,
     pub include: bool,
+    pub vary_type: bool,
 }

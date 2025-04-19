@@ -10,6 +10,7 @@ pub mod item;
 pub mod macros;
 pub mod stmt;
 pub mod r#struct;
+pub mod vary_type;
 
 pub struct Context<'a> {
     pub variant: Option<&'a Ident>,

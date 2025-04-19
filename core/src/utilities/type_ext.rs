@@ -1,6 +1,6 @@
 use syn::{Ident, Type, TypePath};
 
-use super::ident_ext::IdentExt;
+use super::path_ext::PathExt;
 
 pub trait TypePathExt: Sized {
     /// Transform an identifier into a type (Type::Path).
@@ -20,13 +20,7 @@ impl TypePathExt for TypePath {
 
     fn from_appendix(&self, appendix: &Ident) -> Self {
         let mut self_cpy = self.clone();
-
-        self_cpy
-            .path
-            .segments
-            .last_mut()
-            .map(|segment| segment.ident = segment.ident.from_appendix(appendix));
-
+        self_cpy.path = self_cpy.path.from_appendix(appendix);
         self_cpy
     }
 }

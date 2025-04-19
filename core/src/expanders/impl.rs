@@ -59,18 +59,18 @@ impl VisitMut for ImplExpander<'_> {
         variant_str_macro.visit_item_impl_mut(node);
         self.errors.append(&mut variant_str_macro.errors);
 
-        let mut expr_struct_expander =
-            ExprStructExpander::new(self.context, &self.impl_ctx.field_value_ctxs);
-        expr_struct_expander.visit_item_impl_mut(node);
-        self.errors.append(&mut expr_struct_expander.errors);
+        let mut type_macro = TyMacro::new(&base_ty, &self.context.variant);
+        type_macro.visit_item_impl_mut(node);
+        self.errors.append(&mut type_macro.errors);
 
         let mut block_expander = BlockExpander::new(self.context, &self.impl_ctx.stmt_ctxs);
         block_expander.visit_item_impl_mut(node);
         self.errors.append(&mut block_expander.errors);
 
-        let mut type_macro = TyMacro::new(&base_ty, &self.context.variant);
-        type_macro.visit_item_impl_mut(node);
-        self.errors.append(&mut type_macro.errors);
+        let mut expr_struct_expander =
+            ExprStructExpander::new(self.context, &self.impl_ctx.field_value_ctxs);
+        expr_struct_expander.visit_item_impl_mut(node);
+        self.errors.append(&mut expr_struct_expander.errors);
 
         if let Some(base_ty) = &base_macro.base_type {
             let mut replace_base_macro = ReplaceBaseMacro::new(base_ty, &self.context.variant);

@@ -2,7 +2,7 @@ use syn::{Error, Stmt, visit_mut::VisitMut};
 
 use crate::context::stmt::StmtContext;
 
-use super::Context;
+use super::{Context, vary_type::VaryTypeExpander};
 
 pub struct StmtExpander<'a> {
     context: &'a Context<'a>,
@@ -23,7 +23,7 @@ impl<'a> StmtExpander<'a> {
 }
 
 impl VisitMut for StmtExpander<'_> {
-    fn visit_stmt_mut(&mut self, _node: &mut Stmt) {
+    fn visit_stmt_mut(&mut self, node: &mut Stmt) {
         let variant = match self.context.variant {
             Some(variant) => variant,
             None => return,
@@ -35,5 +35,11 @@ impl VisitMut for StmtExpander<'_> {
         };
 
         self.print_stmt = settings.include;
+
+        if settings.vary_type {
+            let mut vary_type_expander = VaryTypeExpander::new(&variant);
+            vary_type_expander.visit_stmt_mut(node);
+            self.errors.append(&mut vary_type_expander.errors);
+        }
     }
 }
