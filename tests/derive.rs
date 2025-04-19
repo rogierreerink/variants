@@ -109,6 +109,8 @@ mod tests {
         #[variants(Summary)]
         impl Hello for Vec<base!(Foo)> {
             fn hello(&self) -> String {
+                let _: ty!();
+
                 type_str!().into()
             }
         }

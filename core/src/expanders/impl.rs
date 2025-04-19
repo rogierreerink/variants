@@ -8,7 +8,7 @@ use super::{
     block::BlockExpander,
     expr_structs::ExprStructExpander,
     macros::{
-        base::BaseMacro, replace_base::ReplaceBaseMacro, type_str::TypeStrMacro,
+        base::BaseMacro, replace_base::ReplaceBaseMacro, ty::TyMacro, type_str::TypeStrMacro,
         variant_str::VariantStrMacro,
     },
 };
@@ -68,7 +68,11 @@ impl VisitMut for ImplExpander<'_> {
         block_expander.visit_item_impl_mut(node);
         self.errors.append(&mut block_expander.errors);
 
-        if let Some(base_ty) = base_macro.base_type {
+        let mut type_macro = TyMacro::new(&base_ty, &self.context.variant);
+        type_macro.visit_item_impl_mut(node);
+        self.errors.append(&mut type_macro.errors);
+
+        if let Some(base_ty) = &base_macro.base_type {
             let mut replace_base_macro = ReplaceBaseMacro::new(base_ty, &self.context.variant);
             replace_base_macro.visit_type_mut(&mut node.self_ty);
             self.errors.append(&mut replace_base_macro.errors);

@@ -4,16 +4,17 @@ use crate::utilities::type_ext::TypePathExt;
 
 use super::insert_type::InsertTypeMacro;
 
-pub struct ReplaceBaseMacro<'a> {
+pub struct TyMacro<'a> {
     base_type: &'a Type,
     variant: &'a Option<&'a Ident>,
     pub errors: Vec<Error>,
 }
 
-impl<'a> ReplaceBaseMacro<'a> {
-    const IDENTIFIER: &'static str = "base";
+impl<'a> TyMacro<'a> {
+    const IDENTIFIER: &'static str = "ty";
 
-    /// Replaces the `base!(type)` macro with the given type.
+    /// Replaces the `ty!()` macro with a concatenation of the base type and the
+    /// variant. If the variant is `None`, just the base type is inserted.
     ///
     pub fn new(base_type: &'a Type, variant: &'a Option<&'a Ident>) -> Self {
         Self {
@@ -24,7 +25,7 @@ impl<'a> ReplaceBaseMacro<'a> {
     }
 }
 
-impl VisitMut for ReplaceBaseMacro<'_> {
+impl VisitMut for TyMacro<'_> {
     fn visit_type_mut(&mut self, node: &mut Type) {
         let ty = self
             .variant
